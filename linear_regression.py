@@ -13,6 +13,45 @@ features = ["Sunshine duration [h/day]", "Outdoor temperature [°C]", "Solar yie
 # Separate the target variable 'y' (gas consumption) from the other variables 'x'
 target = "Gas consumption [kWh/day]" #dependent variable
 
+# to calculate R-squared and BIC values
+import statsmodels.api as sm
+
+# Select the relevant variables for PCA
+variables = heating_data[['Sunshine duration [h/day]', 'Outdoor temperature [°C]', 'Solar yield [kWh/day]',
+                  'Solar pump [h/day]', 'Valve [h/day]']]
+
+# Standardize the variables
+variables_scaled = (variables - variables.mean()) / variables.std()
+
+# Perform PCA
+pca = PCA(n_components=2)
+principal_components = pca.fit_transform(variables_scaled)
+
+# Add the principal components to the DataFrame
+heating_data['PC1'] = principal_components[:, 0]
+heating_data['PC2'] = principal_components[:, 1]
+
+# Separate the target variable (gas consumption) and predictor variables (PC1 and PC2)
+target_variable = heating_data['Gas consumption [kWh/day]']
+predictors = heating_data[['PC1', 'PC2']]
+
+# Add a constant term to the predictor variables
+predictors = sm.add_constant(predictors)
+
+# Fit the linear regression model
+model = sm.OLS(target_variable, predictors)
+results = model.fit()
+
+# Calculate R-squared value
+r_squared = results.rsquared
+
+# Calculate BIC value
+bic = results.bic
+
+# Print the R-squared and BIC values
+print("R-squared:", r_squared)
+print("BIC:", bic)
+
 x = np.c_[heating_data[features]] # extracts feature values as a matrix
 y = np.c_[heating_data[target]] # extracts target values as a one-column matrix
 
